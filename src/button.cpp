@@ -19,11 +19,16 @@ void keypad_task(void *pvParameters){
     while(1){
         char customKey = customKeypad.getKey();
         if (customKey){
-            g_newKey = customKey;
-            g_keyReady = true; // Báo hiệu có phím mới
-            // Chờ một chút để task logic xử lý, tránh việc đọc phím quá nhanh
-            if(customKey == 'A'){
-                button1 = !button1; // Toggle button1 state
+            // Protect shared globals with mutex
+            if (g_mutex != NULL && xSemaphoreTake(g_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                g_newKey = customKey;
+                g_keyReady = true; // Báo hiệu có phím mới
+                if(customKey == 'A'){
+                    button1 = !button1; // Toggle button1 state
+                }
+                xSemaphoreGive(g_mutex);
+            } else {
+                // Không lấy được mutex: bỏ qua (drop) phím này để tránh race
             }
             vTaskDelay(pdMS_TO_TICKS(100)); 
         }

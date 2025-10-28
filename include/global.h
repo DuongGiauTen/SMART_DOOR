@@ -3,6 +3,9 @@
 
 // Include necessary headers
 #include <Arduino.h>
+// FreeRTOS semaphore type
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
 
 enum SystemState {
     INITIAL, // <-- THÊM MỚI
@@ -24,6 +27,9 @@ extern bool g_keyReady;
 extern int g_wrongAttempts;
 extern int g_lockoutTimer;
 extern bool g_doorState; // true = Mở, false = Đóng
+
+// Semaphore to protect access to global variables shared across tasks
+extern SemaphoreHandle_t g_mutex;
 
 // Global variables
 extern int button1; // Example global variable

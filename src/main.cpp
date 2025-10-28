@@ -7,6 +7,8 @@
 #include <LiquidCrystal_I2C.h>
 #include "door.h"
 #include "logic.h"
+// Include globals (contains semaphore declaration)
+#include "global.h"
 
 // const byte ROWS = 4; //four rows
 // const byte COLS = 4; //four columns
@@ -25,6 +27,13 @@
 
 void setup(){
   Serial.begin(115200);
+  // Create mutex for protecting global variables
+  g_mutex = xSemaphoreCreateMutex();
+  if (g_mutex == NULL) {
+    Serial.println("Failed to create mutex");
+    // Optionally handle error: halt or continue without mutex
+  }
+
   //xTaskCreate(led_blinky, "Task LED Blink" ,2048  ,NULL  ,2 , NULL);
   xTaskCreate(keypad_task, "KeyPad Task", 2048, NULL, 2, NULL);
   xTaskCreate(lcd_task, "LCD Task", 2048, NULL, 2, NULL);

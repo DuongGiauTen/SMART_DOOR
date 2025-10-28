@@ -11,99 +11,229 @@ void reset_input() {
 
 void logic_task(void *pvParameters) {
     while (1) {
-        // Chỉ xử lý khi có phím mới được nhấn
-        if (g_keyReady) {
-            g_keyReady = false; // Reset cờ báo
+        // Read key-ready and newKey atomically under mutex
+        bool keyReadyLocal = false;
+        char newKeyLocal = 0;
+        if (g_mutex != NULL && xSemaphoreTake(g_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+            keyReadyLocal = g_keyReady;
+            newKeyLocal = g_newKey;
+            if (keyReadyLocal) g_keyReady = false; // consume the key
+            xSemaphoreGive(g_mutex);
+        } else {
+            // Không lấy được mutex để đọc/tiêu thụ phím -> bỏ qua (không xử lý lần này)
+            keyReadyLocal = false;
+            newKeyLocal = 0;
+        }
 
-            switch (g_systemState) {
+        // Chỉ xử lý khi có phím mới được nhấn
+        if (keyReadyLocal) {
+            // Read current state (local copy)
+            SystemState stateLocal;
+            if (g_mutex != NULL && xSemaphoreTake(g_mutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+                stateLocal = g_systemState;
+                xSemaphoreGive(g_mutex);
+            } else {
+                // Không lấy được mutex để đọc trạng thái hệ thống -> bỏ qua
+                stateLocal = (SystemState)-1;
+            }
+
+            switch (stateLocal) {
                 // ================== PHẦN THÊM MỚI ==================
                 case INITIAL:
-                    if (g_newKey == 'C') { // Nếu nhấn 'C'
-                        g_systemState = LOCKED; // Chuyển sang trạng thái khóa
+                    if (newKeyLocal == 'C') { // Nếu nhấn 'C'
+                        if (g_mutex != NULL && xSemaphoreTake(g_mutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+                            g_systemState = LOCKED; // Chuyển sang trạng thái khóa
+                            xSemaphoreGive(g_mutex);
+                        } else {
+                            g_systemState = LOCKED;
+                        }
                     }
                     break;
                 // ===================================================
 
                 case LOCKED:
-                    if (g_newKey >= '0' && g_newKey <= '9') {
-                        reset_input();
-                        g_enteredPassword[g_passwordIndex++] = g_newKey;
-                        g_systemState = ENTERING_PASSWORD;
+                    if (newKeyLocal >= '0' && newKeyLocal <= '9') {
+                        // update shared input under mutex
+                        if (g_mutex != NULL && xSemaphoreTake(g_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                            reset_input();
+                            g_enteredPassword[g_passwordIndex++] = newKeyLocal;
+                            g_systemState = ENTERING_PASSWORD;
+                            xSemaphoreGive(g_mutex);
+                        } else {
+                            // Không lấy được mutex để cập nhật input -> bỏ qua phím
+                        }
                     }
-                    if (g_newKey == 'C'){
-                        g_systemState = INITIAL; 
-                        reset_input(); // Reset nhập liệu
+                    if (newKeyLocal == 'C'){
+                        if (g_mutex != NULL && xSemaphoreTake(g_mutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+                            g_systemState = INITIAL;
+                            reset_input(); // Reset nhập liệu
+                            xSemaphoreGive(g_mutex);
+                        } else {
+                            // Không lấy được mutex để chuyển về INITIAL -> bỏ qua
+                        }
                     }
-                    if (g_newKey == 'A'){
-                        g_systemState = ERROR; 
-                        reset_input(); // Reset nhập liệu
+                    if (newKeyLocal == 'A'){
+                        if (g_mutex != NULL && xSemaphoreTake(g_mutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+                            g_systemState = ERROR;
+                            reset_input(); // Reset nhập liệu
+                            xSemaphoreGive(g_mutex);
+                        } else {
+                            // Không lấy được mutex để chuyển về ERROR -> bỏ qua
+                        }
                     }
                     break;
 
                 case ENTERING_PASSWORD:
-                    if (g_passwordIndex < 6 && g_newKey >= '0' && g_newKey <= '9') {
-                        g_enteredPassword[g_passwordIndex++] = g_newKey;
-                    } else if (g_passwordIndex == 6 && g_newKey == '#') {
-                        g_systemState = CHECKING_PASSWORD;
-                    } else if (g_newKey == '*') {
-                        reset_input();
-                        g_systemState = LOCKED;
+                    if (g_mutex != NULL && xSemaphoreTake(g_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                        if (g_passwordIndex < 6 && newKeyLocal >= '0' && newKeyLocal <= '9') {
+                            g_enteredPassword[g_passwordIndex++] = newKeyLocal;
+                        } else if (g_passwordIndex == 6 && newKeyLocal == '#') {
+                            g_systemState = CHECKING_PASSWORD;
+                        } else if (newKeyLocal == '*') {
+                            reset_input();
+                            g_systemState = LOCKED;
+                        }
+                        xSemaphoreGive(g_mutex);
+                    } else {
+                        // Không lấy được mutex để cập nhật đang nhập -> bỏ qua phím
                     }
                     break;
                 
 
                 default:
-                    if (g_newKey == '*') {
-                        reset_input();
-                        g_systemState = LOCKED;
+                    if (newKeyLocal == '*') {
+                        if (g_mutex != NULL && xSemaphoreTake(g_mutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+                            reset_input();
+                            g_systemState = LOCKED;
+                            xSemaphoreGive(g_mutex);
+                        } else {
+                            // Không lấy được mutex để xử lý '*' -> bỏ qua
+                        }
                     }
                     break;
             }
         }
-
         // Xử lý logic không phụ thuộc vào phím nhấn (như timer)
-        switch (g_systemState) {
-            case CHECKING_PASSWORD:
-                if (strcmp(g_enteredPassword, CORRECT_PASSWORD) == 0) {
-                    g_systemState = UNLOCKED;
-                    g_wrongAttempts = 0;
+        // Read current state under mutex to operate on a local copy
+        SystemState currentState;
+        if (g_mutex != NULL && xSemaphoreTake(g_mutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+            currentState = g_systemState;
+            xSemaphoreGive(g_mutex);
+        } else {
+            // Không lấy được mutex để đọc trạng thái hiện tại -> bỏ qua vòng xử lý này
+            currentState = (SystemState)-1;
+        }
+
+        switch (currentState) {
+            case CHECKING_PASSWORD: {
+                // Copy enteredPassword safely
+                char localEntered[7] = {0};
+                if (g_mutex != NULL && xSemaphoreTake(g_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                    memcpy(localEntered, g_enteredPassword, sizeof(localEntered));
+                    xSemaphoreGive(g_mutex);
                 } else {
-                    g_wrongAttempts++;
-                    if (g_wrongAttempts >= 3) {
-                        g_systemState = SYSTEM_LOCKED_DOWN;
-                        g_lockoutTimer = 50;
+                    // Không lấy được mutex để đọc entered password -> bỏ qua kiểm tra
+                    break; // thoát switch CHECKING_PASSWORD
+                }
+
+                if (strcmp(localEntered, CORRECT_PASSWORD) == 0) {
+                    if (g_mutex != NULL && xSemaphoreTake(g_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                        g_systemState = UNLOCKED;
+                        g_wrongAttempts = 0;
+                        xSemaphoreGive(g_mutex);
                     } else {
-                        g_systemState = INCORRECT_PASSWORD;
+                        // Không lấy được mutex để cập nhật state -> bỏ qua
+                    }
+                } else {
+                    if (g_mutex != NULL && xSemaphoreTake(g_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                        g_wrongAttempts++;
+                        if (g_wrongAttempts >= 3) {
+                            g_systemState = SYSTEM_LOCKED_DOWN;
+                            g_lockoutTimer = 50;
+                        } else {
+                            g_systemState = INCORRECT_PASSWORD;
+                        }
+                        xSemaphoreGive(g_mutex);
+                    } else {
+                        // Không lấy được mutex để cập nhật sai mật khẩu -> bỏ qua
                     }
                 }
                 reset_input();
                 break;
-            
-            case UNLOCKED:
-                g_doorState = true;
+            }
+
+            case UNLOCKED: {
+                // set door true then release mutex during delay
+                if (g_mutex != NULL && xSemaphoreTake(g_mutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+                    g_doorState = true;
+                    xSemaphoreGive(g_mutex);
+                } else {
+                    // Không lấy được mutex để mở cửa -> bỏ qua (không thay đổi g_doorState)
+                }
                 vTaskDelay(pdMS_TO_TICKS(5000));
-                g_doorState = false;
-                g_systemState = LOCKED;
+                if (g_mutex != NULL && xSemaphoreTake(g_mutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+                    g_doorState = false;
+                    g_systemState = LOCKED;
+                    xSemaphoreGive(g_mutex);
+                } else {
+                    // Không lấy được mutex để đóng cửa/đặt lại state -> bỏ qua
+                }
                 break;
-            
+            }
+
             case INCORRECT_PASSWORD:
                 vTaskDelay(pdMS_TO_TICKS(2000));
-                g_systemState = LOCKED;
-                break;
-            
-            case SYSTEM_LOCKED_DOWN:
-                g_wrongAttempts = 0;
-                while(g_lockoutTimer > 0) {
-                    vTaskDelay(pdMS_TO_TICKS(1000));
-                    g_lockoutTimer--;
+                if (g_mutex != NULL && xSemaphoreTake(g_mutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+                    g_systemState = LOCKED;
+                    xSemaphoreGive(g_mutex);
+                } else {
+                    // Không lấy được mutex để đặt lại state -> bỏ qua
                 }
-                g_lockoutTimer = 50;
-                g_systemState = LOCKED;
                 break;
+
+            case SYSTEM_LOCKED_DOWN: {
+                if (g_mutex != NULL && xSemaphoreTake(g_mutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+                    g_wrongAttempts = 0;
+                    xSemaphoreGive(g_mutex);
+                } else {
+                    g_wrongAttempts = 0;
+                }
+                while (true) {
+                    int timerLocal = 0;
+                    if (g_mutex != NULL && xSemaphoreTake(g_mutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+                        timerLocal = g_lockoutTimer;
+                        xSemaphoreGive(g_mutex);
+                    } else {
+                        timerLocal = g_lockoutTimer;
+                    }
+                    if (timerLocal <= 0) break;
+                    vTaskDelay(pdMS_TO_TICKS(1000));
+                    if (g_mutex != NULL && xSemaphoreTake(g_mutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+                        g_lockoutTimer--;
+                        xSemaphoreGive(g_mutex);
+                    } else {
+                        g_lockoutTimer--;
+                    }
+                }
+                if (g_mutex != NULL && xSemaphoreTake(g_mutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+                    g_lockoutTimer = 50;
+                    g_systemState = LOCKED;
+                    xSemaphoreGive(g_mutex);
+                } else {
+                    g_lockoutTimer = 50;
+                    g_systemState = LOCKED;
+                }
+                break;
+            }
 
             case ERROR:
                 vTaskDelay(pdMS_TO_TICKS(2000));
-                g_systemState = SYSTEM_LOCKED_DOWN;
+                if (g_mutex != NULL && xSemaphoreTake(g_mutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+                    g_systemState = SYSTEM_LOCKED_DOWN;
+                    xSemaphoreGive(g_mutex);
+                } else {
+                    g_systemState = SYSTEM_LOCKED_DOWN;
+                }
                 break;
 
             default:

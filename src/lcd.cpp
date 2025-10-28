@@ -6,19 +6,29 @@
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 void lcd_task(void *pvParameters) {
-    Wire.begin(22, 21);
+    Wire.begin(22, 21); //SDA, SCL
     lcd.init();
     lcd.backlight();
 
     SystemState lastDisplayedState = (SystemState)-1;
     
     while(1) {
-        if (g_systemState != lastDisplayedState) {
-            lcd.clear();
-            lastDisplayedState = g_systemState;
+        // Read system state atomically to avoid tearing
+        SystemState sysLocal;
+        if (g_mutex != NULL && xSemaphoreTake(g_mutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+            sysLocal = g_systemState;
+            xSemaphoreGive(g_mutex);
+        } else {
+            // Không lấy được mutex để đọc trạng thái -> không cập nhật hiển thị trong vòng này
+            sysLocal = lastDisplayedState; // giữ nguyên để không clear/rewrite
         }
 
-        switch(g_systemState) {
+        if (sysLocal != lastDisplayedState) {
+            lcd.clear();
+            lastDisplayedState = sysLocal;
+        }
+
+        switch(sysLocal) {
             // ================== PHẦN THÊM MỚI ==================
             case INITIAL:
                 lcd.setCursor(0, 0);
@@ -37,8 +47,19 @@ void lcd_task(void *pvParameters) {
                 lcd.setCursor(0, 0);
                 lcd.print("Enter Password:");
                 lcd.setCursor(0, 1);
-                for (int i = 0; i < g_passwordIndex; i++) {
-                    lcd.print("*");
+                // Read password index under mutex
+                {
+                    int idx = 0;
+                    if (g_mutex != NULL && xSemaphoreTake(g_mutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+                        idx = g_passwordIndex;
+                        xSemaphoreGive(g_mutex);
+                    } else {
+                        // Không lấy được mutex -> bỏ qua hiển thị dấu * (giữ trống)
+                        idx = 0;
+                    }
+                    for (int i = 0; i < idx; i++) {
+                        lcd.print("*");
+                    }
                 }
                 break;
 
@@ -53,14 +74,34 @@ void lcd_task(void *pvParameters) {
                 lcd.setCursor(0, 0);
                 lcd.print("Wrong Password!");
                 lcd.setCursor(0, 1);
-                lcd.printf("Attempts: %d/3", g_wrongAttempts);
+                {
+                    int attempts = 0;
+                    if (g_mutex != NULL && xSemaphoreTake(g_mutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+                        attempts = g_wrongAttempts;
+                        xSemaphoreGive(g_mutex);
+                    } else {
+                        // Không lấy được mutex -> bỏ qua, hiển thị 0
+                        attempts = 0;
+                    }
+                    lcd.printf("Attempts: %d/3", attempts);
+                }
                 break;
 
             case SYSTEM_LOCKED_DOWN:
                 lcd.setCursor(0, 0);
                 lcd.print("System Locked!");
                 lcd.setCursor(0, 1);
-                lcd.printf("Wait: %2d sec", g_lockoutTimer); 
+                {
+                    int timerLocal = 0;
+                    if (g_mutex != NULL && xSemaphoreTake(g_mutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+                        timerLocal = g_lockoutTimer;
+                        xSemaphoreGive(g_mutex);
+                    } else {
+                        // Không lấy được mutex -> bỏ qua, hiển thị 0
+                        timerLocal = 0;
+                    }
+                    lcd.printf("Wait: %2d sec", timerLocal);
+                }
                 lastDisplayedState = (SystemState)-1;
                 break;
             case ERROR:
