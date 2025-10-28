@@ -6,6 +6,8 @@
 // FreeRTOS semaphore type
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
+// Queue for passing keys
+#include <freertos/queue.h>
 
 enum SystemState {
     INITIAL, // <-- THÊM MỚI
@@ -30,6 +32,8 @@ extern bool g_doorState; // true = Mở, false = Đóng
 
 // Semaphore to protect access to global variables shared across tasks
 extern SemaphoreHandle_t g_mutex;
+// Queue handle for keypad events (char key)
+extern QueueHandle_t g_keyQueue;
 
 // Global variables
 extern int button1; // Example global variable

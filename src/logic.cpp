@@ -11,18 +11,17 @@ void reset_input() {
 
 void logic_task(void *pvParameters) {
     while (1) {
-        // Read key-ready and newKey atomically under mutex
+        // Receive key from queue instead of reading shared g_newKey/g_keyReady
         bool keyReadyLocal = false;
         char newKeyLocal = 0;
-        if (g_mutex != NULL && xSemaphoreTake(g_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-            keyReadyLocal = g_keyReady;
-            newKeyLocal = g_newKey;
-            if (keyReadyLocal) g_keyReady = false; // consume the key
-            xSemaphoreGive(g_mutex);
+        if (g_keyQueue != NULL) {
+            if (xQueueReceive(g_keyQueue, &newKeyLocal, pdMS_TO_TICKS(20)) == pdPASS) {
+                keyReadyLocal = true;
+            } else {
+                keyReadyLocal = false;
+            }
         } else {
-            // Không lấy được mutex để đọc/tiêu thụ phím -> bỏ qua (không xử lý lần này)
             keyReadyLocal = false;
-            newKeyLocal = 0;
         }
 
         // Chỉ xử lý khi có phím mới được nhấn

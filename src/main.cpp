@@ -34,6 +34,12 @@ void setup(){
     // Optionally handle error: halt or continue without mutex
   }
 
+  // Create key queue: buffer up to 16 keys (tune as needed)
+  g_keyQueue = xQueueCreate(16, sizeof(char));
+  if (g_keyQueue == NULL) {
+    Serial.println("Failed to create key queue");
+  }
+
   //xTaskCreate(led_blinky, "Task LED Blink" ,2048  ,NULL  ,2 , NULL);
   xTaskCreate(keypad_task, "KeyPad Task", 2048, NULL, 2, NULL);
   xTaskCreate(lcd_task, "LCD Task", 2048, NULL, 2, NULL);
