@@ -11,7 +11,8 @@ enum SystemState {
     CHECKING_PASSWORD,
     UNLOCKED,
     INCORRECT_PASSWORD,
-    SYSTEM_LOCKED_DOWN
+    SYSTEM_LOCKED_DOWN,
+    ERROR
 };
 
 // Khai báo các biến toàn cục để các file khác có thể sử dụng

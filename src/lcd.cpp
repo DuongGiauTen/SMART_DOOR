@@ -22,9 +22,9 @@ void lcd_task(void *pvParameters) {
             // ================== PHẦN THÊM MỚI ==================
             case INITIAL:
                 lcd.setCursor(0, 0);
-                lcd.print("Chao mung quy");
-                lcd.setCursor(4, 1);
-                lcd.print("khach!");
+                lcd.print("C: UNLOCK DOOR");
+                lcd.setCursor(0, 1);
+                lcd.print("B: CHANGE PASS");
                 break;
             // ===================================================
 
@@ -63,6 +63,13 @@ void lcd_task(void *pvParameters) {
                 lcd.printf("Wait: %2d sec", g_lockoutTimer); 
                 lastDisplayedState = (SystemState)-1;
                 break;
+            case ERROR:
+                lcd.setCursor(0, 0);
+                lcd.print("LOCK ABORTED");
+                lcd.setCursor(0, 1);
+                lcd.print("Waiting...");
+                break;
+
             
             case CHECKING_PASSWORD:
                 break;

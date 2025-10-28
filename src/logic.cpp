@@ -34,6 +34,10 @@ void logic_task(void *pvParameters) {
                         g_systemState = INITIAL; 
                         reset_input(); // Reset nhập liệu
                     }
+                    if (g_newKey == 'A'){
+                        g_systemState = ERROR; 
+                        reset_input(); // Reset nhập liệu
+                    }
                     break;
 
                 case ENTERING_PASSWORD:
@@ -47,6 +51,7 @@ void logic_task(void *pvParameters) {
                     }
                     break;
                 
+
                 default:
                     if (g_newKey == '*') {
                         reset_input();
@@ -92,9 +97,15 @@ void logic_task(void *pvParameters) {
                     vTaskDelay(pdMS_TO_TICKS(1000));
                     g_lockoutTimer--;
                 }
+                g_lockoutTimer = 50;
                 g_systemState = LOCKED;
                 break;
-            
+
+            case ERROR:
+                vTaskDelay(pdMS_TO_TICKS(2000));
+                g_systemState = SYSTEM_LOCKED_DOWN;
+                break;
+
             default:
                 break;
         }
