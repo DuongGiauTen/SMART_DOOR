@@ -1,13 +1,15 @@
 #include "temp_humi_monitor.h"
+#include "global.h"
+#include "lcd.h"
 DHT20 dht20;
-LiquidCrystal_I2C lcd(33,16,2);
+
 
 
 void temp_humi_monitor(void *pvParameters){
 
-    Wire.begin(11, 12);
-    Serial.begin(115200);
-    dht20.begin();
+    // Wire.begin(11, 12);
+    // Serial.begin(115200);
+    // dht20.begin();
 
     while (1){
         /* code */
@@ -39,7 +41,7 @@ void temp_humi_monitor(void *pvParameters){
         Serial.print(temperature);
         Serial.println("°C");
         
-        vTaskDelay(500);
+        vTaskDelay(3000);
     }
     
 }
