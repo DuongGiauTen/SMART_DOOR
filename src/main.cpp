@@ -19,7 +19,10 @@
 #include "button.h"
 #include "lcd.h"
 #include "door.h"
-#include "logic.h"    
+#include "logic.h" 
+#define DOOR_SERVO_PIN 38 // !!! THAY BẰNG CHÂN GPIO BẠN NỐI DÂY TÍN HIỆU
+#define ANGLE_CLOSED 0    // Góc khi cửa ĐÓNG (ví dụ 0 độ)
+#define ANGLE_OPEN 90     // Góc khi cửa MỞ (ví dụ 90 độ)   
 
 void setup()
 {
@@ -27,12 +30,24 @@ void setup()
   check_info_File(0);
   Wire.begin(11, 12); //SDA, SCL
    
-  g_mutex = xSemaphoreCreateMutex();
+  // === TẠO CÁC SEMAPHORE ===
+  g_logicMutex = xSemaphoreCreateMutex();
+  g_sensorMutex = xSemaphoreCreateMutex();
+  g_serialMutex = xSemaphoreCreateMutex();
+  
+  g_doorSemaphore = xSemaphoreCreateBinary();
   xTempSemaphore = xSemaphoreCreateBinary();
   xHumiSemaphore = xSemaphoreCreateBinary(); 
 
-  if (g_mutex == NULL || xTempSemaphore == NULL || xHumiSemaphore == NULL) { 
-    Serial.println("Failed to create semaphores");
+  // Khởi tạo servo 1 LẦN DUY NHẤT ở đây
+  g_doorServo.attach(DOOR_SERVO_PIN, 544, 2400); // Gắn servo vào chân
+  g_doorServo.write(ANGLE_CLOSED); // Đảm bảo cửa ĐÓNG khi khởi động
+
+  // Kiểm tra tất cả
+  if (g_logicMutex == NULL || g_sensorMutex == NULL || g_serialMutex == NULL ||
+      g_doorSemaphore == NULL || xTempSemaphore == NULL || xHumiSemaphore == NULL) { 
+    Serial.println("FATAL ERROR: Failed to create semaphores");
+    // Ở đây bạn có thể dừng hoặc khởi động lại
   }
 
   xTaskCreate(led_blinky, "Task LED Blink", 2048, NULL, 2, NULL);

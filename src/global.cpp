@@ -1,4 +1,6 @@
 #include "global.h"
+#include <ESP32Servo.h>
+
 float glob_temperature = 0;
 float glob_humidity = 0;
 
@@ -21,7 +23,7 @@ bool taskFlag = false;
 int x = 0;
 
 // Định nghĩa (cấp phát bộ nhớ) cho các biến toàn cục liên quan đến khóa/cửa
-SystemState g_systemState = INITIAL; // <-- THAY ĐỔI
+SystemState g_systemState = INITIAL; 
 char g_enteredPassword[7] = {0};
 int g_passwordIndex = 0;
 char g_newKey = 0;
@@ -29,8 +31,16 @@ bool g_keyReady = false;
 int g_wrongAttempts = 0;
 int g_lockoutTimer = 50;
 bool g_doorState = false; // Mặc định cửa đóng
-// Semaphore handle definition (will be created in setup)
-SemaphoreHandle_t g_mutex = NULL;
+Servo g_doorServo;
+
+
+// === CÁC THAY ĐỔI QUAN TRỌNG BẮT ĐẦU TỪ ĐÂY ===
+
+// Khởi tạo tất cả handle là NULL
+SemaphoreHandle_t g_logicMutex = NULL;
+SemaphoreHandle_t g_sensorMutex = NULL;
+SemaphoreHandle_t g_serialMutex = NULL;
+SemaphoreHandle_t g_doorSemaphore = NULL;
 SemaphoreHandle_t xTempSemaphore = NULL;
 SemaphoreHandle_t xHumiSemaphore = NULL;
 

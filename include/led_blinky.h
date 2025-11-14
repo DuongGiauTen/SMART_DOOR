@@ -4,7 +4,7 @@
 #include "global.h"
 #define LED_GPIO 48
 void led_blinky(void *pvParameters);
-void read_Temperature();
+//void read_Temperature();
 
 
 #endif
