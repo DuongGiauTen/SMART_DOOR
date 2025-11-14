@@ -1,26 +1,50 @@
+/* --- neo_blinky.cpp --- */
 #include "neo_blinky.h"
+#include "global.h" // Phải include file global
 
-
-void neo_blinky(void *pvParameters){
-
+void neo_blinky(void *pvParameters) {
     Adafruit_NeoPixel strip(LED_COUNT, NEO_PIN, NEO_GRB + NEO_KHZ800);
     strip.begin();
-    // Set all pixels to off to start
     strip.clear();
+
+    // Đặt màu mặc định (tương ứng HUMI_LOW)
+    strip.setPixelColor(0, strip.Color(0, 0, 255)); // Xanh dương = Khô
     strip.show();
 
-    while(1) {                          
-        strip.setPixelColor(0, strip.Color(255, 0, 0)); // Set pixel 0 to red
-        strip.show(); // Update the strip
+    while (1) {
+        // 1. CHỜ TÍN HIỆU (BLOCKING)
+        // "Tôi sẽ 'ngủ' ở đây cho đến khi có tín hiệu."
+        // Task này không tốn CPU khi đang chờ.
+        xSemaphoreTake(xHumiSemaphore, portMAX_DELAY);
 
-        // Wait for 500 milliseconds
-        vTaskDelay(500);
+        // 2. THỨC DẬY! ĐÃ CÓ TÍN HIỆU
+        // Đọc trạng thái global và đổi màu
+        Serial.println("neo_blinky: Received signal!");
 
-        // Set the pixel to off
-        strip.setPixelColor(0, strip.Color(100, 150, 30)); // Turn pixel 0 off
-        strip.show(); // Update the strip
+        HumiState currentHumi; // Tạo biến cục bộ
 
-        // Wait for another 500 milliseconds
-        vTaskDelay(500);
+        // Dùng mutex để ĐỌC biến global một cách an toàn
+        if (xSemaphoreTake(g_mutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+            currentHumi = g_humiState; // Sao chép giá trị
+            // Trả mutex ngay
+            xSemaphoreGive(g_mutex);
+        }
+
+        // Xử lý logic bên ngoài mutex
+        switch (currentHumi) {
+            case HUMI_LOW: // Khô
+                strip.setPixelColor(0, strip.Color(0, 0, 255)); // Xanh dương
+                break;
+            case HUMI_MEDIUM: // Vừa
+                strip.setPixelColor(0, strip.Color(0, 255, 0)); // Xanh lá
+                break;
+            case HUMI_HIGH: // Ẩm
+                strip.setPixelColor(0, strip.Color(255, 100, 0)); // Cam
+                break;
+        }
+        strip.show(); // Cập nhật màu
+
+        // KHÔNG CẦN vTaskDelay.
+        // Vòng lặp sẽ quay lại và "ngủ" ngay ở xSemaphoreTake.
     }
 }

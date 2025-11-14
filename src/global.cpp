@@ -31,4 +31,8 @@ int g_lockoutTimer = 50;
 bool g_doorState = false; // Mặc định cửa đóng
 // Semaphore handle definition (will be created in setup)
 SemaphoreHandle_t g_mutex = NULL;
+SemaphoreHandle_t xTempSemaphore = NULL;
+SemaphoreHandle_t xHumiSemaphore = NULL;
 
+TemperState g_temperState = TEMP_LOW;
+HumiState g_humiState = HUMI_LOW;

@@ -30,6 +30,18 @@ enum SystemState {
 	ERROR
 };
 
+enum TemperState{
+	TEMP_LOW,
+	TEMP_MEDIUM,
+	TEMP_HIGH
+};
+
+enum HumiState {
+    HUMI_LOW,
+    HUMI_MEDIUM,
+    HUMI_HIGH
+};
+
 // Globals from "global copy.cpp"
 extern int button1;
 extern bool taskFlag;
@@ -37,6 +49,8 @@ extern int x;
 
 // Door / password state globals
 extern SystemState g_systemState;
+extern TemperState g_temperState;
+extern HumiState g_humiState;
 extern char g_enteredPassword[7];
 extern int g_passwordIndex;
 extern char g_newKey;
@@ -47,4 +61,6 @@ extern bool g_doorState;
 
 // Mutex to protect shared globals
 extern SemaphoreHandle_t g_mutex;
+extern SemaphoreHandle_t xTempSemaphore;
+extern SemaphoreHandle_t xHumiSemaphore;
 #endif

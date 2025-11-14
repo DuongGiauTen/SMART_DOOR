@@ -28,13 +28,15 @@ void setup()
   Wire.begin(11, 12); //SDA, SCL
    
   g_mutex = xSemaphoreCreateMutex();
-  if (g_mutex == NULL) {
-    Serial.println("Failed to create mutex");
-    // Optionally handle error: halt or continue without mutex
+  xTempSemaphore = xSemaphoreCreateBinary();
+  xHumiSemaphore = xSemaphoreCreateBinary(); 
+
+  if (g_mutex == NULL || xTempSemaphore == NULL || xHumiSemaphore == NULL) { 
+    Serial.println("Failed to create semaphores");
   }
 
-  //xTaskCreate(led_blinky, "Task LED Blink", 2048, NULL, 2, NULL);
-  //xTaskCreate(neo_blinky, "Task NEO Blink", 2048, NULL, 2, NULL);
+  xTaskCreate(led_blinky, "Task LED Blink", 2048, NULL, 2, NULL);
+  xTaskCreate(neo_blinky, "Task NEO Blink", 2048, NULL, 2, NULL);
   xTaskCreate(temp_humi_monitor, "Task TEMP HUMI Monitor", 2048, NULL, 2, NULL);
   // xTaskCreate(main_server_task, "Task Main Server" ,8192  ,NULL  ,2 , NULL);
   // xTaskCreate( tiny_ml_task, "Tiny ML Task" ,2048  ,NULL  ,2 , NULL);
