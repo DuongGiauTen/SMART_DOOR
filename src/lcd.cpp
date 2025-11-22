@@ -143,6 +143,17 @@ void lcd_task(void *pvParameters) {
                 lcd.setCursor(2, 0);
                 lcd.print("Checking...");
                 break;
+            case FIRE_ALARM:
+                lcd.setCursor(0, 0);
+                lcd.print("!! HOA HOAN !!"); // Dòng 1
+                lcd.setCursor(0, 1);
+                lcd.print("MO CUA KHAN CAP"); // Dòng 2: Emergency Open
+                
+                // Nhấp nháy đèn nền LCD để gây chú ý (Optional)
+                lcd.noBacklight();
+                vTaskDelay(pdMS_TO_TICKS(100));
+                lcd.backlight();
+                break;
         }
         
         vTaskDelay(pdMS_TO_TICKS(200)); // Cập nhật LCD mỗi 200ms

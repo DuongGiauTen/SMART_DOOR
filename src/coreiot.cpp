@@ -96,6 +96,33 @@ void coreiot_task(void *pvParameters) {
         if (!client.connected()) reconnect();
         client.loop();
 
+       // --- KIỂM TRA TRẠNG THÁI BÁO CHÁY ---
+        SystemState currentStateIot = INITIAL;
+        if (xSemaphoreTake(g_logicMutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+            currentStateIot = g_systemState;
+            xSemaphoreGive(g_logicMutex);
+        }
+
+        // Nếu đang cháy, gửi cảnh báo liên tục hoặc ưu tiên
+        if (currentStateIot == FIRE_ALARM) {
+            StaticJsonDocument<200> doc;
+            doc["alarm_status"] = 1; // Bật Widget Alarm đỏ rực
+            doc["door_history"] = "KHẨN CẤP: CHÁY NHÀ!";
+            
+            char buffer[200];
+            serializeJson(doc, buffer);
+            client.publish(TOPIC_TELEMETRY, buffer);
+            
+            Serial.println(">> FIRE ALARM SENT TO CLOUD!");
+            vTaskDelay(2000); // Gửi mỗi 2 giây để spam cảnh báo
+            continue; // Bỏ qua các việc khác
+        } 
+        else {
+            // Nếu không cháy thì gửi:
+            // doc["alarm_status"] = "SAFE"; 
+            // (Để Widget Alarm tắt đi)
+        }       
+
         // --- A. GỬI LỊCH SỬ CỬA (EVENT-BASED) ---
         // Kiểm tra mỗi 100ms xem cửa có đổi trạng thái không
         bool currentDoorState = false;
@@ -133,6 +160,10 @@ void coreiot_task(void *pvParameters) {
             StaticJsonDocument<256> doc;
             doc["temperature"] = t;
             doc["humidity"] = h;
+
+            if (currentStateIot != FIRE_ALARM) {
+                doc["alarm_status"] = 0; 
+            }
             
             char buffer[256];
             serializeJson(doc, buffer);

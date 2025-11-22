@@ -1,6 +1,7 @@
+/* --- src/temp_humi_monitor.cpp (ĐÃ SỬA LỖI) --- */
 #include "temp_humi_monitor.h"
 #include "global.h"
-#include "lcd.h"
+#include "lcd.h" // Để in debug nếu cần
 DHT20 dht20;
 
 void read_real_sensors() {
@@ -11,26 +12,46 @@ void read_real_sensors() {
     glob_temperature = temperature;
     glob_humidity = humidity;
     
-    // BẢO VỆ SERIAL PRINT
+    // In ra Serial để kiểm tra
     if (g_serialMutex != NULL && xSemaphoreTake(g_serialMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-        //Serial.print("Humidity: ");
-        //Serial.print(humidity);
-        //Serial.print("%  Temperature: ");
-        //Serial.print(temperature);
-        //Serial.println("°C");
+        Serial.print("Humi: "); Serial.print(humidity);
+        Serial.print("%  Temp: "); Serial.print(temperature);
+        Serial.println("°C");
         xSemaphoreGive(g_serialMutex);
     }
 }
 
-
 void temp_humi_monitor(void *pvParameters) {
+    // Chờ cảm biến ổn định
+    vTaskDelay(pdMS_TO_TICKS(2000));
+
     while (1) {
-        // 1. Đọc giá trị
         read_real_sensors();
         float temp = glob_temperature;
         float humi = glob_humidity;
 
-        // 2. Xử lý trạng thái mới
+        // === LOGIC BÁO CHÁY ===
+        if (temp >= FIRE_THRESHOLD) {
+            // Dùng Mutex để kiểm tra và cập nhật trạng thái
+            if (xSemaphoreTake(g_logicMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                
+                // Chỉ kích hoạt nếu chưa ở trạng thái báo cháy (Tránh spam)
+                if (g_systemState != FIRE_ALARM) {
+                    Serial.println("!!! ALARM: TEMP TOO HIGH - OPENING DOOR !!!");
+                    
+                    g_systemState = FIRE_ALARM; // Cập nhật trạng thái hệ thống
+                    g_doorState = true;         // Cập nhật biến cửa MỞ
+                    
+                    // Đánh thức Door Task ngay lập tức
+                    xSemaphoreGive(g_doorSemaphore);
+                }
+                
+                // QUAN TRỌNG: Chỉ trả Mutex khi đã lấy thành công
+                xSemaphoreGive(g_logicMutex);
+            }
+        }
+
+        // === LOGIC CẬP NHẬT BIẾN TOÀN CỤC (CHO ĐÈN LED) ===
         TemperState newTempState;
         if (temp < 25.0) newTempState = TEMP_LOW;
         else if (temp < 30.0) newTempState = TEMP_MEDIUM;
@@ -44,9 +65,7 @@ void temp_humi_monitor(void *pvParameters) {
         bool tempChanged = false;
         bool humiChanged = false;
 
-        // 3. Cập nhật biến global (DÙNG g_sensorMutex)
         if (g_sensorMutex != NULL && xSemaphoreTake(g_sensorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-            
             if (newTempState != g_temperState) {
                 g_temperState = newTempState;
                 tempChanged = true;
@@ -55,33 +74,13 @@ void temp_humi_monitor(void *pvParameters) {
                 g_humiState = newHumiState;
                 humiChanged = true;
             }
-            
-            xSemaphoreGive(g_sensorMutex); // Trả g_sensorMutex
-
-        } else {
-            // Báo lỗi dùng g_serialMutex
-            if (g_serialMutex != NULL && xSemaphoreTake(g_serialMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-                Serial.println("temp_humi_monitor: FAILED to get g_sensorMutex!");
-                xSemaphoreGive(g_serialMutex);
-            }
+            xSemaphoreGive(g_sensorMutex); 
         }
 
-        // 4. GỬI TÍN HIỆU
-        if (tempChanged) {
-            if (g_serialMutex != NULL && xSemaphoreTake(g_serialMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-                Serial.println("temp_humi_monitor: Sending Temp signal!");
-                xSemaphoreGive(g_serialMutex);
-            }
-            xSemaphoreGive(xTempSemaphore);
-        }
-        if (humiChanged) {
-            if (g_serialMutex != NULL && xSemaphoreTake(g_serialMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-                Serial.println("temp_humi_monitor: Sending Humi signal!");
-                xSemaphoreGive(g_serialMutex);
-            }
-            xSemaphoreGive(xHumiSemaphore);
-        }
+        // Gửi tín hiệu cho đèn LED Blinky
+        if (tempChanged) xSemaphoreGive(xTempSemaphore);
+        if (humiChanged) xSemaphoreGive(xHumiSemaphore);
 
-        vTaskDelay(pdMS_TO_TICKS(500));
+        vTaskDelay(pdMS_TO_TICKS(500)); // Kiểm tra mỗi 0.5 giây
     }
 }

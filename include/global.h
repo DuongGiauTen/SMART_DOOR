@@ -29,7 +29,8 @@ enum SystemState {
 	UNLOCKED,
 	INCORRECT_PASSWORD,
 	SYSTEM_LOCKED_DOWN,
-	ERROR
+	ERROR,
+	FIRE_ALARM
 };
 
 enum TemperState{

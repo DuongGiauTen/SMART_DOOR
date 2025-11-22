@@ -85,6 +85,34 @@ void logic_task(void *pvParameters) {
                         xSemaphoreGive(g_logicMutex);
                     }
                     break;
+                 case FIRE_ALARM:
+                // Trong trường hợp báo cháy, logic task phải đảm bảo cửa luôn mở
+                // Kiểm tra lại mỗi chu kỳ để chắc chắn cửa không bị đóng nhầm
+                    if (g_logicMutex != NULL && xSemaphoreTake(g_logicMutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+                        if (g_doorState == false) { // Nếu cửa lỡ bị đóng
+                            g_doorState = true;     // Mở lại ngay
+                            xSemaphoreGive(g_doorSemaphore); // Báo task cửa
+                        }
+                        xSemaphoreGive(g_logicMutex);
+                    }
+                    if (newKeyLocal == 'B'){
+                        if (g_logicMutex != NULL && xSemaphoreTake(g_logicMutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+                            
+                            // 1. Reset trạng thái hệ thống
+                            g_systemState = INITIAL;
+                            
+                            // 2. QUAN TRỌNG: Phải đặt biến cửa về False (Đóng)
+                            g_doorState = false; 
+                            
+                            reset_input_unsafe();
+                            xSemaphoreGive(g_logicMutex);
+                        }
+                        
+                        // 3. QUAN TRỌNG: Đánh thức Door Task để nó thực hiện lệnh đóng (Quay Servo)
+                        xSemaphoreGive(g_doorSemaphore);
+                    }         
+                    break;
+           
                 
                 default:
                     if (newKeyLocal == '*') {
