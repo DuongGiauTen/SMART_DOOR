@@ -29,8 +29,11 @@ void keypad_task(void *pvParameters){
                 g_newKey = customKey;
                 g_keyReady = true; // Báo hiệu có phím mới
                 
-                if(customKey == 'A'){
+                if(customKey == 'B'){
                     button1 = !button1; // Toggle button1 state
+                    Serial.print("Button1 state changed to: ");
+                    Serial.println(button1);
+                    
                 }
 
                 // Trả mutex logic NGAY LẬP TỨC

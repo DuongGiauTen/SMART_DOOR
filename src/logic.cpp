@@ -153,7 +153,7 @@ void logic_task(void *pvParameters) {
                 // Đóng cửa
                 if (g_logicMutex != NULL && xSemaphoreTake(g_logicMutex, pdMS_TO_TICKS(50)) == pdTRUE) {
                     g_doorState = false;
-                    g_systemState = LOCKED;
+                    g_systemState = INITIAL;
                     xSemaphoreGive(g_logicMutex);
                 }
                 xSemaphoreGive(g_doorSemaphore); // BÁO HIỆU CHO DOOR_TASK
@@ -195,7 +195,7 @@ void logic_task(void *pvParameters) {
                 
                 if (g_logicMutex != NULL && xSemaphoreTake(g_logicMutex, pdMS_TO_TICKS(50)) == pdTRUE) {
                     g_lockoutTimer = 50; // Reset lại timer
-                    g_systemState = LOCKED;
+                    g_systemState = INITIAL;
                     xSemaphoreGive(g_logicMutex);
                 }
                 break;

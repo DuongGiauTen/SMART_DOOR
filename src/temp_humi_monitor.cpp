@@ -13,11 +13,11 @@ void read_real_sensors() {
     
     // BẢO VỆ SERIAL PRINT
     if (g_serialMutex != NULL && xSemaphoreTake(g_serialMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-        Serial.print("Humidity: ");
-        Serial.print(humidity);
-        Serial.print("%  Temperature: ");
-        Serial.print(temperature);
-        Serial.println("°C");
+        //Serial.print("Humidity: ");
+        //Serial.print(humidity);
+        //Serial.print("%  Temperature: ");
+        //Serial.print(temperature);
+        //Serial.println("°C");
         xSemaphoreGive(g_serialMutex);
     }
 }

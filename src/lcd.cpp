@@ -62,11 +62,33 @@ void lcd_task(void *pvParameters) {
         switch(sysLocal) {
             case INITIAL:
                 lcd.setCursor(0, 0);
-                lcd.print("Temp:");
-                lcd.print(tempLocal, 1); // 1 số lẻ
+                lcd.print("T:");
+                lcd.print(tempLocal, 2); // 2 số lẻ
+                lcd.setCursor(9, 0);
+                lcd.print("H:");
+                lcd.print(humiLocal, 2); // 2 số lẻ
                 lcd.setCursor(0, 1);
-                lcd.print("Humi:");
-                lcd.print(humiLocal, 1); // 1 số lẻ
+                if (tempLocal < 25.0) {
+                    lcd.setCursor(0, 1);
+                    lcd.print("LOW   ");
+                } else if (tempLocal < 30.0) {
+                    lcd.setCursor(0, 1);
+                    lcd.print("NORMAL");
+                } else {
+                    lcd.setCursor(0, 1);
+                    lcd.print("HIGH   ");
+                }
+
+                if(humiLocal < 65.0) {
+                    lcd.setCursor(9, 1);
+                    lcd.print("LOW   ");
+                } else if (humiLocal < 70.0) {
+                    lcd.setCursor(9, 1);
+                    lcd.print("MEDIUM");
+                } else {
+                    lcd.setCursor(9, 1);
+                    lcd.print("HIGH   ");
+                }
                 break;
 
             case LOCKED:

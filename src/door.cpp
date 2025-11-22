@@ -13,6 +13,7 @@ void door_task(void *pvParameters){
     // Task này chỉ chờ tín hiệu
     
     while (1) {
+      
         
         // 1. NGỦ (Block) cho đến khi logic_task GỬI TÍN HIỆU
         if (xSemaphoreTake(g_doorSemaphore, portMAX_DELAY) == pdTRUE) {
@@ -31,7 +32,20 @@ void door_task(void *pvParameters){
                 } else {
                     g_doorServo.write(ANGLE_CLOSED); // Đóng cửa
                 }
+
+
+                // if (button1 == 1){
+                //     g_doorServo.write(ANGLE_OPEN); // Mở cửa
+                // }
+                // else{
+                //     g_doorServo.write(ANGLE_CLOSED); // Đóng cửa
+                // } 
+
+             
             }
+
+
+            
         }
         // Không cần vTaskDelay, task sẽ tự động ngủ lại ở xSemaphoreTake
     }

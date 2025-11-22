@@ -4,16 +4,16 @@
 float glob_temperature = 0;
 float glob_humidity = 0;
 
-String WIFI_SSID;
-String WIFI_PASS;
+String WIFI_SSID =  "ACLAB";
+String WIFI_PASS = "ACLAB2023";
 String CORE_IOT_TOKEN;
 String CORE_IOT_SERVER;
 String CORE_IOT_PORT;
 
-String ssid = "ESP32-YOUR NETWORK HERE!!!";
-String password = "12345678";
-String wifi_ssid = "abcde";
-String wifi_password = "123456789";
+String ssid = "ACLAB";
+String password = "ACLAB2023";
+String wifi_ssid = "ACLAB";
+String wifi_password = "ACLAB2023";
 boolean isWifiConnected = false;
 SemaphoreHandle_t xBinarySemaphoreInternet = xSemaphoreCreateBinary();
 
@@ -46,3 +46,16 @@ SemaphoreHandle_t xHumiSemaphore = NULL;
 
 TemperState g_temperState = TEMP_LOW;
 HumiState g_humiState = HUMI_LOW;
+
+const char* MQTT_SERVER    = "app.coreiot.io";
+//const char* MQTT_SERVER = "125.212.240.243";
+const int   MQTT_PORT      = 1883;
+
+// Thông tin đăng nhập 
+const char* MQTT_CLIENT_ID = "DOOR_DEVICE";  
+const char* MQTT_USER      = "duongtran253"; 
+const char* MQTT_PASS      = "Np@cz039";     
+
+// Các Topic mặc định của CoreIoT 
+const char* TOPIC_TELEMETRY = "v1/devices/me/telemetry";
+const char* TOPIC_RPC_SUB   = "v1/devices/me/rpc/request/+";

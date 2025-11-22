@@ -78,4 +78,15 @@ extern SemaphoreHandle_t g_doorSemaphore;
 // Semaphores cho LED và NeoPixel (như cũ)
 extern SemaphoreHandle_t xTempSemaphore;
 extern SemaphoreHandle_t xHumiSemaphore;
+
+//======== CẤU HÌNH CHO IOT============
+extern const char* MQTT_SERVER;
+extern const int   MQTT_PORT;
+extern const char* MQTT_CLIENT_ID;
+extern const char* MQTT_USER;
+extern const char* MQTT_PASS;
+
+extern const char* TOPIC_TELEMETRY;
+extern const char* TOPIC_RPC_SUB;
+
 #endif
