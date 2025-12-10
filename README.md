@@ -1,5 +1,5 @@
 # Link video demo
-https://github.com/DuongGiauTen/SMART_DOOR
+https://drive.google.com/file/d/1UOqzO59OdZPAG61uTEKauAz3CKGXyiR5/view?usp=sharing
 
 # 🚪 Smart Door System with IoT & Fire Safety (FreeRTOS based)
 
