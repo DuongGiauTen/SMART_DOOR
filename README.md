@@ -1,3 +1,6 @@
+# Link video demo
+https://github.com/DuongGiauTen/SMART_DOOR
+
 # 🚪 Smart Door System with IoT & Fire Safety (FreeRTOS based)
 
 ![Platform](https://img.shields.io/badge/Platform-ESP32--S3-blue?style=for-the-badge&logo=espressif)
