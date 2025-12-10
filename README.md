@@ -67,7 +67,7 @@ Dựa trên thiết kế mạch cho Kit **Yolo Uno (ESP32-S3)**, các chân GPIO
 ### 2. Thiết lập dự án
 1.  **Clone repository:**
     ```bash
-    git clone [https://github.com/your-username/smart-door-system.git](https://github.com/your-username/smart-door-system.git)
+    git clone https://github.com/DuongGiauTen/SMART_DOOR
     ```
 2.  **Cấu hình WiFi & MQTT:**
     * Mở file `src/global.cpp`.
