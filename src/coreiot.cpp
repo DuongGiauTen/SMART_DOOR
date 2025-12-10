@@ -26,6 +26,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
             if (cmdOpen) {
                 g_systemState = UNLOCKED; // Chuyển trạng thái hệ thống
                 g_doorState = true;       // Set biến cửa mở
+                g_unlockSource = "Remote Web/App"; // Ghi nguồn mở cửa
             } else {
                 g_systemState = LOCKED;   // Chuyển trạng thái hệ thống
                 g_doorState = false;      // Set biến cửa đóng
@@ -124,27 +125,37 @@ void coreiot_task(void *pvParameters) {
         }       
 
         // --- A. GỬI LỊCH SỬ CỬA (EVENT-BASED) ---
-        // Kiểm tra mỗi 100ms xem cửa có đổi trạng thái không
         bool currentDoorState = false;
+        String unlockSourceLocal = ""; // Biến tạm để copy chuỗi ra ngoài
+
         if (xSemaphoreTake(g_logicMutex, pdMS_TO_TICKS(50)) == pdTRUE) {
             currentDoorState = g_doorState;
+            // Copy tên người mở cửa ra biến tạm để xử lý (tránh giữ mutex lâu)
+            unlockSourceLocal = g_unlockSource; 
             xSemaphoreGive(g_logicMutex);
         }
 
         if (currentDoorState != lastDoorState) {
-            // Trạng thái thay đổi -> Gửi ngay lập tức
-            StaticJsonDocument<256> doc;
-            doc["door_history"] = currentDoorState ? "Đã Mở Cửa" : "Đã Đóng Cửa"; // Dữ liệu bảng
-            doc["door_status"]  = currentDoorState; // Dữ liệu đèn báo (True/False)
+            StaticJsonDocument<512> doc; // Tăng size lên xíu vì chuỗi tên có thể dài
             
-            char buffer[256];
+            if (currentDoorState == true) {
+                // NẾU CỬA MỞ: Gửi kèm tên người mở
+                // Ví dụ: "MỞ: Thẻ: Nguyen Van A (ID...)"
+                doc["door_history"] = "MỞ: " + unlockSourceLocal;
+            } else {
+                // NẾU CỬA ĐÓNG
+                doc["door_history"] = "ĐÃ ĐÓNG CỬA";
+            }
+            
+            doc["door_status"] = currentDoorState;
+            
+            char buffer[512];
             serializeJson(doc, buffer);
             client.publish(TOPIC_TELEMETRY, buffer);
             
             Serial.println(">> HISTORY SENT: " + String(buffer));
             lastDoorState = currentDoorState;
         }
-
         // --- B. GỬI NHIỆT ĐỘ/ĐỘ ẨM (PERIODIC) ---
         // Dùng millis() để gửi định kỳ mà không chặn luồng A
         if (millis() - lastSensorTime > SENSOR_INTERVAL) {

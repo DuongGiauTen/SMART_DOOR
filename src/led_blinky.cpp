@@ -1,4 +1,4 @@
-/* --- led_blinky.cpp --- */
+
 #include "led_blinky.h"
 // global.h đã được include từ led_blinky.h
 
