@@ -141,6 +141,7 @@ void logic_task(void *pvParameters) {
                 if (g_logicMutex != NULL && xSemaphoreTake(g_logicMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
                     memcpy(localEntered, g_enteredPassword, sizeof(localEntered));
                     reset_input_unsafe(); // Reset luôn ở đây
+                    g_unlockSource = "Mật khẩu Keypad";
                     xSemaphoreGive(g_logicMutex);
                 } else {
                     break; 
@@ -172,6 +173,7 @@ void logic_task(void *pvParameters) {
                 // Mở cửa
                 if (g_logicMutex != NULL && xSemaphoreTake(g_logicMutex, pdMS_TO_TICKS(50)) == pdTRUE) {
                     g_doorState = true;
+                    //g_unlockSource = "Mật khẩu Keypad";
                     xSemaphoreGive(g_logicMutex);
                 }
                 xSemaphoreGive(g_doorSemaphore); // BÁO HIỆU CHO DOOR_TASK
@@ -234,6 +236,13 @@ void logic_task(void *pvParameters) {
                 vTaskDelay(pdMS_TO_TICKS(2000));
                 if (g_logicMutex != NULL && xSemaphoreTake(g_logicMutex, pdMS_TO_TICKS(50)) == pdTRUE) {
                     g_systemState = SYSTEM_LOCKED_DOWN;
+                    xSemaphoreGive(g_logicMutex);
+                }
+                break;
+            case UNKNOWN_CARD:
+                vTaskDelay(pdMS_TO_TICKS(2000));
+                if (g_logicMutex != NULL && xSemaphoreTake(g_logicMutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+                    g_systemState = INITIAL;
                     xSemaphoreGive(g_logicMutex);
                 }
                 break;

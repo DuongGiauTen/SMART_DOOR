@@ -30,7 +30,8 @@ enum SystemState {
 	INCORRECT_PASSWORD,
 	SYSTEM_LOCKED_DOWN,
 	ERROR,
-	FIRE_ALARM
+	FIRE_ALARM,
+	UNKNOWN_CARD
 };
 
 enum TemperState{
@@ -49,6 +50,10 @@ enum HumiState {
 extern int button1;
 extern bool taskFlag;
 extern int x;
+// Biến lưu thông tin người/cách thức vừa mở cửa
+extern String g_unlockSource;
+// Mặc định chưa ai mở
+extern String g_unlockSource;
 
 // Door / password state globals
 extern SystemState g_systemState;

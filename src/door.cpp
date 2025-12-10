@@ -31,22 +31,9 @@ void door_task(void *pvParameters){
                     g_doorServo.write(ANGLE_OPEN); // Mở cửa
                 } else {
                     g_doorServo.write(ANGLE_CLOSED); // Đóng cửa
-                }
-
-
-                // if (button1 == 1){
-                //     g_doorServo.write(ANGLE_OPEN); // Mở cửa
-                // }
-                // else{
-                //     g_doorServo.write(ANGLE_CLOSED); // Đóng cửa
-                // } 
-
-             
-            }
-
-
-            
+                }           
+            }  
         }
-        // Không cần vTaskDelay, task sẽ tự động ngủ lại ở xSemaphoreTake
+       
     }
 }

@@ -32,6 +32,7 @@ int g_wrongAttempts = 0;
 int g_lockoutTimer = 50;
 bool g_doorState = false; // Mặc định cửa đóng
 Servo g_doorServo;
+String g_unlockSource = "Không xác định";
 
 
 // === CÁC THAY ĐỔI QUAN TRỌNG BẮT ĐẦU TỪ ĐÂY ===

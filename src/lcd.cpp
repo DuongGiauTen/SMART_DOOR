@@ -154,6 +154,12 @@ void lcd_task(void *pvParameters) {
                 vTaskDelay(pdMS_TO_TICKS(100));
                 lcd.backlight();
                 break;
+            case UNKNOWN_CARD:
+                lcd.setCursor(0, 0);
+                lcd.print("ERROR");
+                lcd.setCursor(0, 1);
+                lcd.print("UNKNOWN CARD");
+                break;
         }
         
         vTaskDelay(pdMS_TO_TICKS(200)); // Cập nhật LCD mỗi 200ms

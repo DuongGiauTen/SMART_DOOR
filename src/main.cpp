@@ -6,6 +6,7 @@
 // #include "mainserver.h"
 // #include "tinyml.h"
 #include "coreiot.h"
+#include "task_rfid.h"
 
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
@@ -20,7 +21,7 @@
 #include "lcd.h"
 #include "door.h"
 #include "logic.h" 
-#define DOOR_SERVO_PIN 38 // !!! THAY BẰNG CHÂN GPIO BẠN NỐI DÂY TÍN HIỆU
+#define DOOR_SERVO_PIN 38 
 #define ANGLE_CLOSED 0    // Góc khi cửa ĐÓNG (ví dụ 0 độ)
 #define ANGLE_OPEN 90     // Góc khi cửa MỞ (ví dụ 90 độ)   
 
@@ -67,6 +68,7 @@ void setup()
   xTaskCreate(lcd_task, "LCD Task", 2048, NULL, 2, NULL);
   xTaskCreate(door_task, "Door Task", 2048, NULL, 2, NULL);
   xTaskCreate(logic_task, "Logic Task", 4096, NULL, 3, NULL);
+  xTaskCreate(rfid_task, "RFID Task", 4096, NULL, 2, NULL);
 }
 
 void loop()
