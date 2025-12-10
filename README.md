@@ -3,6 +3,7 @@ https://drive.google.com/file/d/1UOqzO59OdZPAG61uTEKauAz3CKGXyiR5/view?usp=shari
 
 # 🚪 Smart Door System with IoT & Fire Safety (FreeRTOS based)
 
+
 ![Platform](https://img.shields.io/badge/Platform-ESP32--S3-blue?style=for-the-badge&logo=espressif)
 ![Framework](https://img.shields.io/badge/Framework-Arduino-green?style=for-the-badge&logo=arduino)
 ![OS](https://img.shields.io/badge/OS-FreeRTOS-orange?style=for-the-badge)
