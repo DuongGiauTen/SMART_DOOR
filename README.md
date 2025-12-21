@@ -9,7 +9,7 @@ https://drive.google.com/file/d/1UOqzO59OdZPAG61uTEKauAz3CKGXyiR5/view?usp=shari
 ![OS](https://img.shields.io/badge/OS-FreeRTOS-orange?style=for-the-badge)
 ![IoT](https://img.shields.io/badge/IoT-CoreIoT%20(ThingsBoard)-red?style=for-the-badge)
 
-> **Đồ án Môn học:** Hệ thống nhúng & IoT  
+> **Đồ án Môn học:** Thiết kế luận lý & HDL 
 > **Giảng viên hướng dẫn:** Thầy Lê Trọng Nhân  
 > **Kit phát triển:** Yolo Uno (ESP32-S3)
 
